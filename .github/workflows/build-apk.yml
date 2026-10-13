@@ -6,19 +6,24 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
-      - uses: android-actions/setup-android@v3
-      - name: 编译
+      - name: 编译（使用 runner 自带的 Android SDK）
         run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
-      - uses: actions/upload-artifact@v4
+          ./gradlew assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
+      - name: 失败时显示错误
+        if: failure()
+        run: grep -nE "^e: |error:|FAILURE|What went wrong" -A3 build.log | head -60 | while IFS= read -r l; do echo "::error::$l"; done
+      - uses: actions/upload-artifact@v5
         with:
           name: 比色读数仪-apk
           path: app/build/outputs/apk/release/*.apk
