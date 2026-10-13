@@ -22,7 +22,8 @@ jobs:
           exit ${PIPESTATUS[0]}
       - name: 失败时显示错误
         if: failure()
-        run: grep -nE "^e: |error:|FAILURE|What went wrong" -A3 build.log | head -60 | while IFS= read -r l; do echo "::error::$l"; done
+        run: |
+          grep -nE "^e: |error:|FAILURE|What went wrong" -A3 build.log | head -60 | while IFS= read -r l; do echo "::error::$l"; done
       - uses: actions/upload-artifact@v5
         with:
           name: 比色读数仪-apk
